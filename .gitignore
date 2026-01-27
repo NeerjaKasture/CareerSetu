@@ -42,9 +42,18 @@ backend/prisma/migrations/
 # TypeScript
 *.tsbuildinfo
 
-
 backend/test_unicode.js
 backend/delete_neerja_chat.js
 
+# Python
+backend/venv/
+backend/src/services/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
 
+# Chroma vector database (rebuilt on first run)
+backend/chroma_data_multilingual/
 
+# Test files
+backend/nift.txt

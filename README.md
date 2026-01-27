@@ -74,6 +74,22 @@ cd backend
 npm install
 ```
 
+3. Set up Python virtual environment:
+
+**macOS/Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Windows (PowerShell):**
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate
+pip install -r requirements.txt
+```
+
 5. Add `.env` and add your configuration:
 
 ```env

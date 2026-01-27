@@ -280,18 +280,35 @@ router.post('/message', authenticateToken, async (req: Request, res: Response) =
 
     // Get previous messages for context (excluding the one we just created)
     // CRITICAL: For assessment-specific chats, only load messages from that assessment
-    // For general chats (no assessment), start fresh with NO previous context to avoid confusion
-    const previousMessages = assessment
-      ? await prisma.chatMessage.findMany({
-          where: {
-            user_id: userId,
-            assessment_id: assessment.id,
-            id: { not: userMessage.id },
-          },
-          orderBy: { created_at: 'desc' },
-          take: 10,
-        })
-      : []; // No previous messages for general chat - start fresh each time
+    // For general chats (no assessment), load recent messages to maintain conversation context
+    let previousMessages;
+    if (assessment) {
+      // Assessment-specific chat: only load messages from that assessment
+      previousMessages = await prisma.chatMessage.findMany({
+        where: {
+          user_id: userId,
+          assessment_id: assessment.id,
+          id: { not: userMessage.id },
+        },
+        orderBy: { created_at: 'desc' },
+        take: 10,
+      });
+    } else {
+      // General chat: load recent messages (without assessment_id) for conversation context
+      // Only include messages from the last 10 minutes to create natural session boundaries
+      // This prevents old conversations from polluting new chat sessions
+      const tenMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      previousMessages = await prisma.chatMessage.findMany({
+        where: {
+          user_id: userId,
+          assessment_id: null, // Only general chat messages
+          id: { not: userMessage.id },
+          created_at: { gte: tenMinutesAgo }, // Only messages from last 10 minutes
+        },
+        orderBy: { created_at: 'desc' },
+        take: 10,
+      });
+    }
 
     // Reverse to get chronological order
     const contextMessages = previousMessages.reverse().map((msg) => ({
