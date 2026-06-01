@@ -1,3 +1,12 @@
+---
+title: CareerSetu
+emoji: 🎓
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # Career Guidance Web App 
 
 A web-based career guidance platform that combines psychometric assessments with AI-powered career recommendations. Students complete RIASEC, values, and preference assessments, after which Google Gemini AI generates personalized career suggestions with clear reasoning. A multilingual RAG chatbot (with built-in guardrails) enables safe, contextual career exploration in six Indian languages. All guidance content is sourced from cleaned and processed NCERT Career Cards. The platform includes dashboards for reviewing assessment history, results, and chat transcripts.
