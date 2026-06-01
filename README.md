@@ -2,6 +2,16 @@
 
 A web-based career guidance platform that combines psychometric assessments with AI-powered career recommendations. Students complete RIASEC, values, and preference assessments, after which Google Gemini AI generates personalized career suggestions with clear reasoning. A multilingual RAG chatbot (with built-in guardrails) enables safe, contextual career exploration in six Indian languages. All guidance content is sourced from cleaned and processed NCERT Career Cards. The platform includes dashboards for reviewing assessment history, results, and chat transcripts.
 
+## Documentation
+
+Each phase of this project has been documented thoroughly.
+
+The first phase involved literature and design space review which can be found in [assignment 1 report](https://github.com/ashmitchhoker/assignment_HCI/blob/master/HCI_report1.pdf)
+
+The second phase involved building a low fi prototype which was built using Figma. We also made a presentation that included personas and storyboarding, system feedback, sitemap etc.  Check our [report](https://github.com/ashmitchhoker/assignment_HCI/blob/master/HCI%20Task%202%20report.pdf) and [presentation](https://github.com/ashmitchhoker/assignment_HCI/blob/master/HCI%20task%202%20ppt%20Group%201.pptx)
+
+The third phase involved building a low fi prototype which is the majority of the codebase here. We also conducted user testing and mapped user interaction flow and system architecture shown in our presentation. Check our [report](https://github.com/ashmitchhoker/assignment_HCI/blob/master/HCI%20Task%203%20Report.pdf) and [presentation](https://github.com/ashmitchhoker/assignment_HCI/blob/master/task3_ppt_HCI.pdf)
+
 ## How to Use
 
 1. Setup as instructed
@@ -62,6 +72,22 @@ cd backend
 
 ```bash
 npm install
+```
+
+3. Set up Python virtual environment:
+
+**macOS/Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Windows (PowerShell):**
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate
+pip install -r requirements.txt
 ```
 
 5. Add `.env` and add your configuration:

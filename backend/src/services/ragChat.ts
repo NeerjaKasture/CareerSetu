@@ -55,6 +55,14 @@ export class RAGChatService {
   private getPythonExecutable(): string {
     // Check if virtual environment exists and use its Python
     const backendDir = path.resolve(__dirname, "../..");
+    
+    // Windows: venv/Scripts/python.exe
+    const venvPythonWin = path.join(backendDir, "venv", "Scripts", "python.exe");
+    if (fs.existsSync(venvPythonWin)) {
+      return venvPythonWin;
+    }
+    
+    // macOS/Linux: venv/bin/python
     const venvPython = path.join(backendDir, "venv", "bin", "python");
     if (fs.existsSync(venvPython)) {
       return venvPython;
@@ -64,6 +72,12 @@ export class RAGChatService {
     const venvPython3 = path.join(backendDir, "venv", "bin", "python3");
     if (fs.existsSync(venvPython3)) {
       return venvPython3;
+    }
+
+    // Check for Python 3.12 (macOS specific)
+    const python312 = "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3";
+    if (fs.existsSync(python312)) {
+      return python312;
     }
 
     // Fallback to python3 (macOS/Linux) or python (Windows)

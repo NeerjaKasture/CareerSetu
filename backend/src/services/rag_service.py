@@ -81,6 +81,82 @@ class RAGChatService:
         # Build the chain
         self.chain = self._build_chain()
 
+    def _reformulate_query(self, question: str, chat_history: List) -> str:
+        """
+        Reformulate the user's question by incorporating context from chat history.
+        This helps with follow-up questions like "any scholarship in this?" where
+        "this" refers to a career mentioned earlier.
+        
+        Args:
+            question: The user's current question
+            chat_history: List of previous HumanMessage/AIMessage objects
+            
+        Returns:
+            A reformulated, self-contained question for retrieval
+        """
+        # Debug logging
+        print(f"[RAG DEBUG] _reformulate_query called with question='{question}', history_len={len(chat_history)}", file=sys.stderr)
+        
+        # If no chat history, return as-is
+        if not chat_history:
+            print(f"[RAG DEBUG] No chat history, skipping reformulation", file=sys.stderr)
+            return question
+        
+        # Always reformulate short questions (under 8 words) when there's chat history
+        # Short questions are often follow-ups that need context like:
+        # - "give example from the field"
+        # - "any scholarships?"
+        # - "what about salary?"
+        # - "how long does it take?"
+        is_short_question = len(question.split()) < 8
+        
+        # Also check for pronouns/references that definitely need context
+        context_words = ['this', 'that', 'it', 'these', 'those', 'above', 'same', 'such', 'mentioned', 'the field', 'career', 'job']
+        has_context_words = any(word in question.lower() for word in context_words)
+        
+        # Reformulate if question is short OR has context words
+        if not (is_short_question or has_context_words):
+            return question
+        
+        try:
+            # Build context from recent messages
+            recent_context = []
+            for msg in chat_history[-4:]:  # Last 4 messages
+                if isinstance(msg, HumanMessage):
+                    recent_context.append(f"User: {msg.content}")
+                elif isinstance(msg, AIMessage):
+                    # Only include a summary of AI responses
+                    content = msg.content[:200] + "..." if len(msg.content) > 200 else msg.content
+                    recent_context.append(f"Assistant: {content}")
+            
+            context_text = "\n".join(recent_context)
+            
+            reformulation_prompt = f"""Given this conversation context:
+{context_text}
+
+The user now asks: "{question}"
+
+Rewrite the user's question to be a self-contained search query that includes the relevant context (like career name, topic, etc.). 
+Only output the reformulated question, nothing else. Keep it concise (under 20 words).
+
+Reformulated question:"""
+            
+            # Use the LLM to reformulate
+            reformulated = self.llm.invoke(reformulation_prompt)
+            if hasattr(reformulated, 'content'):
+                reformulated = reformulated.content
+            reformulated = str(reformulated).strip()
+            
+            # Log for debugging
+            print(f"[RAG] Query reformulation: '{question}' -> '{reformulated}'", file=sys.stderr)
+            
+            return reformulated if reformulated else question
+            
+        except Exception as e:
+            print(f"[RAG] Query reformulation failed: {e}, using original", file=sys.stderr)
+            return question
+
+
     def _init_vectordb(self) -> Chroma:
         """Initialize or load Chroma vector database"""
         if os.path.exists(self.chroma_persist_dir) and os.listdir(self.chroma_persist_dir):
