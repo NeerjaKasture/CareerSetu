@@ -19,9 +19,12 @@ from pathlib import Path
 
 # CRITICAL: Set up proper UTF-8 encoding for stdin/stdout
 # This fixes encoding issues with Hindi, Telugu, and other Unicode languages
-sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8', errors='replace')
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+sys.stdin = io.TextIOWrapper(
+    sys.stdin.buffer, encoding='utf-8', errors='replace')
+sys.stdout = io.TextIOWrapper(
+    sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(
+    sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Load environment variables from .env file
 # Look for .env in backend directory (parent of src)
@@ -140,10 +143,19 @@ class RAGChatService:
             from langchain_google_genai import ChatGoogleGenerativeAI
             # Use gemini-2.5-flash instead of gemini-2.5-pro for better free tier limits
             # Flash has 15 requests/minute vs Pro's 2 requests/minute on free tier
+            # Get API key from environment (support both GEMINI_API_KEY and GOOGLE_API_KEY)
+            api_key = os.environ.get(
+                "GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+            if not api_key:
+                raise ValueError(
+                    "GEMINI_API_KEY or GOOGLE_API_KEY environment variable is required")
+            print(
+                f"[DEBUG] Using Google API key: {api_key[:10]}...", file=sys.stderr)
             return ChatGoogleGenerativeAI(
                 model="gemini-2.5-flash",
                 temperature=0.1,
-                max_output_tokens=1500
+                max_output_tokens=1500,
+                google_api_key=api_key
             )
         else:
             raise ValueError(f"Unknown provider: {self.provider}")
@@ -220,7 +232,7 @@ class RAGChatService:
             # Verify message encoding (defensive check)
             if not isinstance(message, str):
                 message = str(message)
-            
+
             # Convert chat history to LangChain format
             # This preserves all Unicode characters from previous conversations
             lc_history = []
@@ -229,21 +241,28 @@ class RAGChatService:
                 # Ensure content is properly decoded string
                 if not isinstance(content, str):
                     content = str(content)
-                    
+
                 if msg["role"] == "user":
                     lc_history.append(HumanMessage(content=content))
                 elif msg["role"] == "assistant":
                     lc_history.append(AIMessage(content=content))
 
             # Get relevant documents
+            print(
+                f"[DEBUG] Retrieving documents for message: {message[:50]}...", file=sys.stderr)
             docs = self.retriever.invoke(message)
+            print(f"[DEBUG] Retrieved {len(docs)} documents", file=sys.stderr)
 
             # Generate response - LLM will respond in specified language
+            print(
+                f"[DEBUG] Calling LLM chain with language: {language}", file=sys.stderr)
             response = self.chain.invoke({
                 "question": message,
                 "chat_history": lc_history,
                 "language": language
             })
+            print(
+                f"[DEBUG] LLM responded with {len(response) if response else 0} chars", file=sys.stderr)
 
             # Verify response is string (should contain Hindi/Telugu if input was)
             if not isinstance(response, str):
@@ -294,8 +313,9 @@ class RAGChatService:
                 "mr": "Generate in Marathi (मराठीत उत्तर द्या)",
                 "bn": "Generate in Bengali (বাংলায় উত্তর দিন)"
             }
-            
-            lang_instruction = lang_instructions.get(language, "Generate in English")
+
+            lang_instruction = lang_instructions.get(
+                language, "Generate in English")
 
             greeting_prompt = f"""Based on this student's assessment results, generate a warm, encouraging greeting that:
 1. Welcomes them to the career guidance chat
@@ -371,10 +391,23 @@ def main():
                         "Service not initialized. Call 'initialize' first.")
 
                 result = rag_service.chat(message, chat_history, language)
-                print(safe_json_dumps({
-                    "status": "success",
-                    "data": result
-                }), flush=True)
+
+                # Debug: log what we're about to send
+                print(
+                    f"[DEBUG] Chat result: response={result.get('response') is not None}, error={result.get('error')}", file=sys.stderr)
+
+                # If the chat method returned an error, propagate it properly
+                if result.get("error"):
+                    print(safe_json_dumps({
+                        "status": "error",
+                        "message": result["error"],
+                        "data": result
+                    }), flush=True)
+                else:
+                    print(safe_json_dumps({
+                        "status": "success",
+                        "data": result
+                    }), flush=True)
 
             elif command == "greeting":
                 assessment_summary = input_data.get("assessment_summary")
@@ -386,10 +419,19 @@ def main():
 
                 result = rag_service.generate_initial_greeting(
                     assessment_summary, language)
-                print(safe_json_dumps({
-                    "status": "success",
-                    "data": result
-                }), flush=True)
+
+                # If the greeting method returned an error, propagate it properly
+                if result.get("error"):
+                    print(safe_json_dumps({
+                        "status": "error",
+                        "message": result["error"],
+                        "data": result
+                    }), flush=True)
+                else:
+                    print(safe_json_dumps({
+                        "status": "success",
+                        "data": result
+                    }), flush=True)
 
             else:
                 print(safe_json_dumps({

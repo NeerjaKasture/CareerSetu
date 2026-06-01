@@ -36,6 +36,7 @@ interface TestFormPageProps {
   currentTestIndex: number;
   totalTests: number;
   assessmentId?: number;
+  isGuestMode?: boolean;
   onTestComplete?: (
     testType: TestType,
     answers: { [key: number]: string | string[] }
@@ -1419,6 +1420,7 @@ export function TestFormPage({
   currentTestIndex,
   totalTests,
   assessmentId,
+  isGuestMode = false,
   onTestComplete,
 }: TestFormPageProps) {
   const [showDialog, setShowDialog] = useState(true);
@@ -1439,7 +1441,8 @@ export function TestFormPage({
     setCurrentQuestionIndexState(0);
     
     const loadTestData = async () => {
-      if (!assessmentId) {
+      // Skip backend calls in guest mode
+      if (isGuestMode || !assessmentId) {
         setIsLoadingTestData(false);
         return;
       }
@@ -1618,8 +1621,8 @@ export function TestFormPage({
       allAnswersKeys: Object.keys(answers),
     });
 
-    // If we have testResponseId, save to backend
-    if (testResponseId && assessmentId) {
+    // If we have testResponseId and not in guest mode, save to backend
+    if (testResponseId && assessmentId && !isGuestMode) {
       try {
         // Calculate current question index based on answered questions
         const currentIdx = answeredCount;

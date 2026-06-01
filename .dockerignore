@@ -1,0 +1,10 @@
+node_modules
+**/node_modules
+backend/venv
+frontend/build
+backend/dist
+.git
+.env
+backend/.env
+frontend/.env
+*.sqlite3-journal

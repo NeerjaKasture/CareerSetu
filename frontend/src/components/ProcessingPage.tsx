@@ -21,6 +21,7 @@ interface ProcessingPageProps {
   allTestAnswers: { [testType: string]: { [key: number]: string | string[] } };
   testFlow: TestType[];
   assessmentId: number | null;
+  isGuestMode?: boolean;
   onResultsReceived: (results: AssessmentResults) => void;
 }
 
@@ -176,6 +177,7 @@ export function ProcessingPage({
   allTestAnswers,
   testFlow,
   assessmentId,
+  isGuestMode = false,
   onResultsReceived,
 }: ProcessingPageProps) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -208,6 +210,43 @@ export function ProcessingPage({
 
   const submitAssessment = async () => {
     try {
+      // In guest mode, show mock results without backend call
+      if (isGuestMode) {
+        // Simulate processing delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const mockResults: AssessmentResults = {
+          recommendations: [
+            {
+              title: "Software Developer",
+              confidence: 0.92,
+              reason: "Your analytical thinking and problem-solving skills align well with software development.",
+              next_steps: ["Learn programming basics", "Build personal projects", "Explore computer science courses"]
+            },
+            {
+              title: "Data Analyst",
+              confidence: 0.88,
+              reason: "Your attention to detail and logical reasoning make you suitable for data analysis.",
+              next_steps: ["Study statistics", "Learn data visualization tools", "Practice with real datasets"]
+            },
+            {
+              title: "UX Designer",
+              confidence: 0.85,
+              reason: "Your creativity combined with technical interest suggests UX design as a great fit.",
+              next_steps: ["Learn design principles", "Study user psychology", "Build a portfolio"]
+            }
+          ],
+          summary: "Based on your responses, you show strong aptitude for technology and creative problem-solving. Consider careers that blend analytical thinking with innovation."
+        };
+        
+        setAssessmentResults(mockResults);
+        onResultsReceived(mockResults);
+        setIsComplete(true);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Regular backend submission for logged-in users
       // Prepare assessment payload
       const tests = testFlow.map((testType) => ({
         type: testType,

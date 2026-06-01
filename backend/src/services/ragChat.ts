@@ -139,6 +139,7 @@ export class RAGChatService {
         // CRITICAL: Explicitly set encoding to utf-8
         this.pythonProcess.stdout?.setEncoding("utf-8");
         this.pythonProcess.stdout?.on("data", (data: string) => {
+          console.log(`[RAG DEBUG] Received stdout (${data.length} chars):`, data.substring(0, 200));
           this.outputBuffer += data;
 
           // Process complete lines
@@ -148,6 +149,7 @@ export class RAGChatService {
           for (const line of lines) {
             const trimmed = line.trim();
             if (trimmed) {
+              console.log(`[RAG DEBUG] Processing line:`, trimmed.substring(0, 100));
               this.processResponseLine(trimmed);
             }
           }
@@ -158,14 +160,8 @@ export class RAGChatService {
         this.pythonProcess.stderr?.setEncoding("utf-8");
         this.pythonProcess.stderr?.on("data", (data: string) => {
           const msg = data.trim();
-          // Filter out routine messages
-          if (
-            !msg.includes("redirects.py") &&
-            !msg.includes("Loaded .env") &&
-            !msg.includes("Started and waiting")
-          ) {
-            console.error(`[RAG]: ${msg}`);
-          }
+          // Log ALL stderr for debugging
+          console.error(`[RAG STDERR]: ${msg}`);
         });
 
         // Handle process exit
@@ -253,9 +249,12 @@ export class RAGChatService {
       throw new Error("RAG service not initialized");
     }
 
+    console.log(`[RAG DEBUG] Sending command: ${command.command}`);
+
     return new Promise((resolve, reject) => {
       // Set timeout for this request (increased to handle rate limits and retries)
       const timeout = setTimeout(() => {
+        console.error(`[RAG DEBUG] Request timeout after 90s for command: ${command.command}`);
         // Remove from pending requests
         const index = this.pendingRequests.findIndex(
           (req) => req.timeout === timeout
@@ -317,12 +316,26 @@ export class RAGChatService {
       language: language,
     });
 
+    // Debug: log the full response from Python
+    console.log("[RAG] Full response from Python:", JSON.stringify(response, null, 2));
+
+    // Check for error status first
+    if (response.status === "error") {
+      throw new Error(response.message || "RAG service returned an error");
+    }
+
     if (response.data && response.data.response) {
       // Response should already be in the specified language
       return response.data.response;
     }
-    console.log(response.data?.response);
-    throw new Error("Invalid chat response from RAG service");
+
+    // Log what we actually received for debugging
+    console.error("[RAG] Invalid response structure:", {
+      hasData: !!response.data,
+      dataResponse: response.data?.response,
+      fullResponse: response
+    });
+    throw new Error("Invalid chat response from RAG service: missing response field");
   }
 
   /**

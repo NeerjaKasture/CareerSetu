@@ -98,6 +98,18 @@ app.use('/api/assessment', assessmentRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/profile', profileRoutes);
 
+// Serve frontend static files in production
+const frontendBuildPath = path.resolve(__dirname, '../../frontend/build');
+app.use(express.static(frontendBuildPath));
+
+// Support React Router SPA fallback (redirect non-API paths to frontend index.html)
+app.get('*', (req: Request, res: Response, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
+});
+
 // 404 handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({

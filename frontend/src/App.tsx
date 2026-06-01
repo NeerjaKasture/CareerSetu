@@ -518,6 +518,7 @@ function App() {
             currentTestIndex={currentTestIndex}
             totalTests={testFlow.length}
             assessmentId={selectedAssessmentId || undefined}
+            isGuestMode={isGuestMode}
             onTestComplete={(testType, answers) => {
               setAllTestAnswers((prev) => ({ ...prev, [testType]: answers }));
             }}
