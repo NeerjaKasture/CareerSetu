@@ -19,23 +19,38 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # 1. Delete offending large files that exceed Hugging Face's 10MB limit
+          # 1. Delete offending files, documentations, and heavy media
+          find . -type f \( -name "*.pptx" -o -name "*.pdf" -o -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.mp4" -o -name "*.mov" -o -name "*.zip" \) -not -path '*/node_modules/*' -delete
           rm -rf backend/chroma_data_multilingual
           rm -rf backend/chroma_data_full
-          rm -f "HCI task 2 ppt Group 1.pptx"
+          
+          # 2. Add them to .gitignore so they are never tracked in the fresh commit
+          echo "backend/chroma_data_multilingual/" >> .gitignore
+          echo "backend/chroma_data_full/" >> .gitignore
+          echo "*.pptx" >> .gitignore
+          echo "*.pdf" >> .gitignore
+          echo "*.png" >> .gitignore
+          echo "*.jpg" >> .gitignore
+          echo "*.jpeg" >> .gitignore
+          echo "*.mp4" >> .gitignore
+          echo "*.mov" >> .gitignore
+          echo "*.zip" >> .gitignore
 
-          # 3. Wipe Git history to get rid of large files in past commits
+          # 3. Find and delete ANY remaining file larger than 9MB (just to be safe)
+          find . -type f -size +9M -not -path '*/node_modules/*' -delete
+
+          # 4. Wipe Git history to get rid of large files in past commits
           rm -rf .git
 
-          # 4. Re-initialize a clean git repository in the runner
+          # 5. Re-initialize a clean git repository in the runner
           git init
           git checkout -b main
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          # 5. Commit the clean code files
+          # 6. Commit the clean code files
           git add .
           git commit -m "Deploy clean workspace to Hugging Face Spaces"
 
-          # 6. Force-push the single clean commit directly to Hugging Face
+          # 7. Force-push the single clean commit directly to Hugging Face
           git push --force https://NeerjaK:$HF_TOKEN@huggingface.co/spaces/NeerjaK/CareerSetu main:main
