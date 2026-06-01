@@ -54,6 +54,11 @@ __pycache__/
 
 # Chroma vector database (unneeded)
 backend/chroma_data_full/
+backend/chroma_data_multilingual/
+
 
 # Test files
 backend/nift.txt
+
+*.pptx
+*.pdf

@@ -15,8 +15,27 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Push to Hugging Face
+      - name: Clean and Push to Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          # 1. Delete offending large files that exceed Hugging Face's 10MB limit
+          rm -rf backend/chroma_data_multilingual
+          rm -rf backend/chroma_data_full
+          rm -f "HCI task 2 ppt Group 1.pptx"
+
+          # 3. Wipe Git history to get rid of large files in past commits
+          rm -rf .git
+
+          # 4. Re-initialize a clean git repository in the runner
+          git init
+          git checkout -b main
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          # 5. Commit the clean code files
+          git add .
+          git commit -m "Deploy clean workspace to Hugging Face Spaces"
+
+          # 6. Force-push the single clean commit directly to Hugging Face
           git push --force https://NeerjaK:$HF_TOKEN@huggingface.co/spaces/NeerjaK/CareerSetu master:main
