@@ -19,4 +19,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push --force https://NeerjaK:$HF_TOKEN@huggingface.co/spaces/NeerjaK/CareerSetu main:main
+          git push --force https://NeerjaK:$HF_TOKEN@huggingface.co/spaces/NeerjaK/CareerSetu master:main
